@@ -115,18 +115,33 @@ net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_dev
 int
 net_run(void)
 {
+    struct net_device *dev;
     
+    debugf("open all devices...");
+    for (dev = devices; dev; dev = dev->next) {
+        net_device_open(dev);
+    }
+    debugf("running...");
+    return 0;
 }
 
 void
 net_shutdown(void)
 {
+    struct net_device *dev;
 
+    debugf("close all devices...");
+    for (dev = devices; dev; dev = dev->next) {
+        net_device_close(dev);
+    }
+    debugf("shutting down");
 }
 
 int
 net_init(void)
 {
-    
+    // NOTE: no operation with current implementation
+    infof("initialized");
+    return 0;
 }
     
