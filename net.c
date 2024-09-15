@@ -129,7 +129,7 @@ net_protocol_register(uint16_t type, void (*handler)(const uint8_t *data, size_t
 
     for (proto = protocols; proto; proto = proto->next) {
         if (type == proto->type) {
-            errorf("already registered, type=0x%04x" type);
+            errorf("already registered, type=0x%04x", type);
             return -1;
         }
     }
@@ -155,9 +155,10 @@ net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_dev
     struct net_protocol *proto;
     struct net_protocol_queue_entry *entry;
 
+    debugf("enter net_input_handler");
     for (proto = protocols; proto; proto = proto->next) {
         if (proto->type == type) {
-            entry = memory_alloc(sizeof(*entry));
+            entry = memory_alloc(sizeof(*entry) + len);
             if (!entry) {
                 errorf("protocol_queue_entry: memory_alloc() failure");
                 return -1;
@@ -166,6 +167,7 @@ net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_dev
             entry->dev = dev;
             entry->len = len;
             memcpy(entry->data, data, len);
+            debugf("ok entry->data memcpy");
 
             // TODO: 失敗したときにエラーを返す
             queue_push(&proto->queue, entry);
