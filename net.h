@@ -28,7 +28,7 @@ struct net_device {
     unsigned int index;
     char name[IFNAMSIZ];
     uint16_t type;
-    uint16_t mtu;
+    uint16_t mtu;  /* the maximum size that can transmit once*/
     uint16_t flags;
     uint16_t hlen; /* header length */
     uint16_t alen; /* address length */
