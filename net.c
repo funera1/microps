@@ -152,7 +152,32 @@ net_protocol_register(uint16_t type, void (*handler)(const uint8_t *data, size_t
 int
 net_input_handler(uint16_t type, const uint8_t *data, size_t len, struct net_device *dev)
 {
-    // NOTE: With the current implementation, all we need to know is that the data was sent.
+    struct net_protocol *proto;
+    struct net_protocol_queue_entry *entry;
+
+    for (proto = protocols; proto; proto = proto->next) {
+        if (proto->type == type) {
+            entry = memory_alloc(sizeof(*entry));
+            if (!entry) {
+                errorf("protocol_queue_entry: memory_alloc() failure");
+                return -1;
+            }
+            
+            entry->dev = dev;
+            entry->len = len;
+            memcpy(entry->data, data, len);
+
+            // TODO: 失敗したときにエラーを返す
+            queue_push(&proto->queue, entry);
+            
+            debugf("queue pushed (num:%u), dev=%s, type=0x%04x, len=%zu",
+                 proto->queue.num, dev->name, type, len)
+            debugdump(data, len);
+            return 0;
+        }
+    }
+    
+    /* unsupported protocol */
     return 0;   
 }
 
@@ -197,8 +222,12 @@ net_init(void)
         errorf("intr_init() failure");
         return -1;
     }
+    
+    if (ip_init() == -1) {
+        errorf("ip_init() failure");
+        return -1;
+    }
 
-    // NOTE: no operation with current implementation
     infof("initialized");
     return 0;
 }
