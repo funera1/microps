@@ -61,11 +61,40 @@ intr_request_irq(unsigned int irq, int (*handler)(unsigned int irq, void *dev), 
 int
 intr_raise_irq(unsigned int irq)
 {
+    return pthread_kill(tid, (int)irq);
 }
 
 static void *
 intr_thread(void *arg)
 {
+    int terminate = 0, sig, err;
+    struct irq_entry *entry;
+
+    debugf("start...");
+    pthread_barrier_wait(&barrier);
+    while (!terminate) {
+        err = sigwait(&sigmask, &sig);
+        if (err) {
+            errorf("sigwait() %s", strerror(err));
+            break;
+        }
+        
+        switch (sig) {
+            case SIGHUP:
+                terminate = 1;
+                break;
+            default:
+                for (entry = irqs; entry; entry = entry->next) {
+                    if (entry->irq == (unsigned int)sig) {
+                        debugf("irq=%d, name=%s", entry->irq, entry->name);
+                        entry->handler(entry->irq, entry->dev);
+                    }
+                }
+                break;
+        }
+    }
+    debugf("terminated");
+    return NULL;
 }
 
 int
