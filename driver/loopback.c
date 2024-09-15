@@ -56,6 +56,8 @@ loopback_transmit(struct net_device *dev, uint16_t type, const uint8_t *data, si
 
     debugf("queue pushed (num:%u), dev=%s, type=0x%04x, len=%zd", num, dev->name, type, len);
     debugdump(data, len);
+    /* NOTE: loデバイスのinput要求は、outputしたときに起きる（loopbackなので）から、
+             自身のoutput時にraise_irqする */
     intr_raise_irq(PRIV(dev)->irq);
 }
 
