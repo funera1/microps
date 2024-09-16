@@ -120,7 +120,10 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
         errorf("data len is shorter than total len");
         return;
     }
-    if (cksum16((uint16_t *)data, len, 0) != hdr->sum) {
+    
+    // NOTE: 検証時のcksumは0が返されればOK
+    uint16_t cksum = cksum16((uint16_t *)data, len, 0);
+    if (cksum != 0) {
         errorf("checksum validation failure");
         return;
     }
