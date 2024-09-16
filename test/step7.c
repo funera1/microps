@@ -4,6 +4,7 @@
 
 #include "util.h"
 #include "net.h"
+#include "ip.h"
 
 #include "driver/loopback.h"
 
@@ -22,7 +23,7 @@ int
 main(int argc, char *argv[])
 {
     struct net_device *dev;
-    struct ip_ifacce *iface;
+    struct ip_iface *iface;
 
     signal(SIGINT, on_signal);
     if (net_init() == -1) {

@@ -57,7 +57,7 @@ struct net_iface {
     struct net_device *dev; /* back pointer to parent */
     int family;
     /* depends on implementation of protocols. */
-}
+};
 
 struct net_device_ops {
     int (*open)(struct net_device *dev);
