@@ -95,6 +95,44 @@ ip_dump(const uint8_t *data, size_t len)
 static void
 ip_input(const uint8_t *data, size_t len, struct net_device *dev)
 {
+    struct ip_hdr *hdr;
+    uint8_t v;
+    uint16_t hlen, total, offset;
+
+    if (len < IP_HDR_SIZE_MIN) {
+        errorf("too short");
+        return;
+    }
+    
+    hdr = (struct ip_hdr *)data;
+    v = (hdr->vhl & 0xf0) >> 4;
+    hlen = (hdr->vhl & 0x0f) << 2;
+    if (v != IP_VERSION_IPV4) {
+        errorf("incorrect version");
+        return;
+    }
+    if (len < hlen) {
+        errorf("data len is shorter than header len");
+        return;
+    }
+    total  = ntoh16(hdr->total); 
+    if (len < total) {
+        errorf("data len is shorter than total len");
+        return;
+    }
+    if (cksum16((uint16_t *)data, len, 0) != hdr->sum) {
+        errorf("checksum validation failure");
+        return;
+    }
+    
+    offset = ntoh16(hdr->offset);
+    if (offset & 0x2000 || offset & 0x1fff) {
+        errorf("fragments does not support");
+        return;
+    }
+    
+    debugf("dev=%s, protocol=%u, total=%u", dev->name, hdr->protocol, total);
+    ip_dump(data, total);
 }
 
 int
