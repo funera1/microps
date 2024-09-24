@@ -282,7 +282,9 @@ ip_output(uint8_t protocol, const uint8_t *data, size_t len, ip_addr_t src, ip_a
         }
 
         // check reachablilty to dst
-        if (dst & iface->netmask != src & iface->netmask || dst != 0xFFFFFFFF) {
+        // rule 1: same network between src and dst
+        // rule 2: dst is not broadcast (oxffffffff)
+        if ((dst & iface->netmask - src & iface->netmask == 0) && dst != 0xFFFFFFFF) {
             errorf("iface can't reach dst");
             return -1;
         }
