@@ -195,8 +195,9 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
     }
     
     // NOTE: 検証時のcksumは0が返されればOK
-    uint16_t cksum = cksum16((uint16_t *)data, len, 0);
+    uint16_t cksum = cksum16((uint16_t *)hdr, hlen, 0);
     if (cksum != 0) {
+        debugf("sum: %d\n", ntoh16(cksum));
         errorf("checksum validation failure");
         return;
     }
@@ -238,10 +239,19 @@ ip_output_core(struct ip_iface *iface, uint8_t protocol, const uint8_t *data, si
     char addr[IP_ADDR_STR_LEN];
 
     hdr = (struct ip_hdr *)buf;
-    hdr->vhl = (hdr->vhl&0xf0) + IP_HDR_SIZE_MIN;
+    hlen = IP_HDR_SIZE_MIN;
+    hdr->vhl = (IP_VERSION_IPV4<<4) | (hlen>>2);
     hdr->tos = 0;
+    total = hlen + len;
+    hdr->total = ntoh16(total);
+    hdr->id = ntoh16(id);
+    hdr->offset = offset;
     hdr->ttl = 255;
-    hdr->sum = cksum16((uint16_t *)data, len, 0);
+    hdr->protocol = protocol;
+    hdr->src = src;
+    hdr->dst = dst;
+    hdr->sum = 0;
+    hdr->sum = cksum16((uint16_t *)hdr, hlen, 0);
     buf[IP_HDR_SIZE_MIN] = data;
 
     debugf("dev=%s, dst=%s, protocol=%u, len=%u",
