@@ -111,12 +111,13 @@ net_device_add_iface(struct net_device *dev, struct net_iface *iface)
             return -1;
         }
     }
-    
     // registration entry to dev->ifaces
     iface->dev = dev;
-    entry->next = dev->ifaces;
-    dev->ifaces = entry;
-    
+
+    // insert this iface to the top of device interface list
+    iface->next = dev->ifaces;
+    dev->ifaces = iface;
+
     return 0;
 }
 
@@ -297,4 +298,3 @@ net_init(void)
     infof("initialized");
     return 0;
 }
-    
