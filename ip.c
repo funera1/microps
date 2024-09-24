@@ -66,13 +66,13 @@ ip_iface_alloc(const char *unicast, const char *netmask)
         return NULL;
     }    
     NET_IFACE(iface)->family = NET_IFACE_FAMILY_IP;
-    
-    if (ip_addr_pton(unicast, iface->unicast) != 0) {
+
+    if (ip_addr_pton(unicast, &(iface->unicast)) != 0) {
         memory_free(iface);
         errorf("ip_addr_pton(unicast) failure");
         return NULL;
     }
-    if (ip_addr_pton(netmask, iface->netmask) != 0) {
+    if (ip_addr_pton(netmask, &(iface->netmask)) != 0) {
         memory_free(iface);
         errorf("ip_addr_pton(netmask) failure");
         return NULL;
