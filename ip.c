@@ -225,7 +225,8 @@ ip_output_device(struct ip_iface *iface, const uint8_t *data, size_t len, ip_add
             return -1;
         }
     }
-    // TODO: implement
+
+    return net_device_output(NET_IFACE(iface)->dev, NET_PROTOCOL_TYPE_IP, data, len, dst);
 }
 
 static ssize_t
@@ -237,7 +238,11 @@ ip_output_core(struct ip_iface *iface, uint8_t protocol, const uint8_t *data, si
     char addr[IP_ADDR_STR_LEN];
 
     hdr = (struct ip_hdr *)buf;
-    // TODO: implement
+    hdr->vhl = (hdr->vhl&0xf0) + IP_HDR_SIZE_MIN;
+    hdr->tos = 0;
+    hdr->ttl = 255;
+    hdr->sum = cksum16((uint16_t *)data, len, 0);
+    buf[IP_HDR_SIZE_MIN] = data;
 
     debugf("dev=%s, dst=%s, protocol=%u, len=%u",
         NET_IFACE(iface)->dev->name, ip_addr_ntop(dst, addr, sizeof(addr)), protocol, total);
@@ -269,6 +274,18 @@ ip_output(uint8_t protocol, const uint8_t *data, size_t len, ip_addr_t src, ip_a
         errorf("ip routing does not implement");
         return -1;
     } else { /* NOTE: I'll rewrite this block layer */
+        // serarch ip interface
+        iface = ip_iface_select(src);
+        if (iface == NULL) {
+            errorf("ip_iface_select() failure");
+            return -1;
+        }
+
+        // check reachablilty to dst
+        if (dst & iface->netmask != src & iface->netmask || dst != 0xFFFFFFFF) {
+            errorf("iface can't reach dst");
+            return -1;
+        }
 
     }
 
