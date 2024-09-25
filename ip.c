@@ -68,7 +68,29 @@ ip_addr_pton(const char *p, ip_addr_t *n)
 int
 ip_protocol_register(uint8_t type, void (*handler)(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct ip_iface *iface))
 {
+    struct ip_protocol *proto, *entry;
 
+    // TODO: implementation
+    for (entry = protocols; entry; entry = entry->next) {
+        if (type == entry->type) {
+            errorf("already exists, type=%d", type);
+            return -1;
+        }
+    }
+
+    // alloc proto and register proto to protocols
+    proto = memory_alloc(sizeof(*proto));
+    if (!proto) {
+        errorf("memory_alloc() failure");
+        return -1;
+    }
+    proto->type = type;
+    proto->handler = handler;
+    proto->next = protocols;
+    protocols = proto;
+    
+    infof("registered, type=%u", entry->type);
+    return 0;
 }
 
 struct ip_iface *
