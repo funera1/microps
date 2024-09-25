@@ -295,6 +295,11 @@ net_init(void)
         return -1;
     }
 
+    if (icmp_init() == -1) {
+        errorf("ip_init() failure");
+        return -1;
+    }
+
     infof("initialized");
     return 0;
 }
