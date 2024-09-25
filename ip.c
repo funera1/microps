@@ -68,9 +68,8 @@ ip_addr_pton(const char *p, ip_addr_t *n)
 int
 ip_protocol_register(uint8_t type, void (*handler)(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct ip_iface *iface))
 {
-    struct ip_protocol *proto, *entry;
+    struct ip_protocol *entry;
 
-    // TODO: implementation
     for (entry = protocols; entry; entry = entry->next) {
         if (type == entry->type) {
             errorf("already exists, type=%d", type);
@@ -79,15 +78,15 @@ ip_protocol_register(uint8_t type, void (*handler)(const uint8_t *data, size_t l
     }
 
     // alloc proto and register proto to protocols
-    proto = memory_alloc(sizeof(*proto));
-    if (!proto) {
+    entry = memory_alloc(sizeof(*entry));
+    if (!entry) {
         errorf("memory_alloc() failure");
         return -1;
     }
-    proto->type = type;
-    proto->handler = handler;
-    proto->next = protocols;
-    protocols = proto;
+    entry->type = type;
+    entry->handler = handler;
+    entry->next = protocols;
+    protocols = entry;
     
     infof("registered, type=%u", entry->type);
     return 0;
@@ -252,7 +251,7 @@ ip_input(const uint8_t *data, size_t len, struct net_device *dev)
     struct ip_protocol *entry;
     for (entry = protocols; entry; entry = entry->next) {
         if (entry->type == hdr->protocol) {
-            entry->handler(data, len, hdr->src, hdr->dst, iface);
+            entry->handler(data, total-hlen, hdr->src, hdr->dst, iface);
         }
     }
 
