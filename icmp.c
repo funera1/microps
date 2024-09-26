@@ -55,9 +55,9 @@ icmp_dump(const uint8_t *data, size_t len)
 
     flockfile(stderr);
     hdr = (struct icmp_hdr *)data;
-    fprintf(stderr, "   type: %u (%s)\n", hdr->type, icmp_type_ntoa(hdr->type));
-    fprintf(stderr, "   code: %u\n", hdr->code);
-    fprintf(stderr, "    sum: 0x%04x\n", ntoh16(hdr->sum));
+    fprintf(stderr, "       type: %u (%s)\n", hdr->type, icmp_type_ntoa(hdr->type));
+    fprintf(stderr, "       code: %u\n", hdr->code);
+    fprintf(stderr, "        sum: 0x%04x\n", ntoh16(hdr->sum));
     switch (hdr->type) {
         case ICMP_TYPE_ECHOREPLY:
         case ICMP_TYPE_ECHO:
@@ -82,14 +82,16 @@ icmp_input(const uint8_t *data, size_t len, ip_addr_t src, ip_addr_t dst, struct
     char addr1[IP_ADDR_STR_LEN];
     char addr2[IP_ADDR_STR_LEN];
 
-    if (len != ICMP_HDR_SIZE) {
+    if (len < ICMP_HDR_SIZE) {
+        debugf("expect, real: %d, %d\n", ICMP_HDR_SIZE, len);
         errorf("icmp header size isn't correct");
         return;
     }
     
     hdr = (struct icmp_hdr *)data;
-    if (cksum16(hdr, len, 0) != 0) {
-        errorf("invalid checksum");
+    uint16_t sum = cksum16((uint16_t *)data, len, 0);
+    if (sum != 0) {
+        errorf("checksum error, sum=0x%04x, verify=0x%04x", ntoh16(hdr->sum), sum);
         return;
     }
 
