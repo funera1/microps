@@ -47,7 +47,28 @@ arp_opcode_ntoa(uint16_t opcode)
 static void
 arp_dump(const uint8_t *data, size_t len)
 {
+    struct arp_ether_ip *message;
+    ip_addr_t spa, tpa;
+    char addr[128];
 
+    message = (struct arp_ether_ip *)data;
+    flockfile(stderr);
+    // fprintf(stderr, "       vhl: 0x%02x [v: %u, hl: %u (%u)]\n", hdr->vhl, v, hl, hlen);
+    fprintf(stderr, "       hrd: 0x%04x\n", ntoh16(message->hdr.hrd));
+    fprintf(stderr, "       pro: 0x%04x\n", ntoh16(message->hdr.pro));
+    fprintf(stderr, "       hln: %u\n", message->hdr.hln);
+    fprintf(stderr, "       pln: %u\n", message->hdr.pln);
+    fprintf(stderr, "        op: %u (%s)\n", ntoh16(message->hdr.op), arp_opcode_ntoa(message->hdr.op));
+    fprintf(stderr, "       sha: %s\n", ether_addr_ntop(message->sha, addr, sizeof(addr)));
+    memcpy(&spa, message->spa, sizeof(spa));
+    fprintf(stderr, "       spa: %s\n", ip_addr_ntop(message->spa, addr, sizeof(addr)));
+    fprintf(stderr, "       tha: %s\n", ether_addr_ntop(message->tha, addr, sizeof(addr)));
+    memcpy(&spa, message->tpa, sizeof(tpa));
+    fprintf(stderr, "       tpa: %s\n", ip_addr_ntop(message->tpa, addr, sizeof(addr)));
+#ifdef HEXDUMP
+    hexdump(stderr, data, len);
+#endif HEXDUMP
+    funlock(stderr);
 }
 
 static int
