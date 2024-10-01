@@ -31,7 +31,7 @@ ether_addr_pton(const char *p, uint8_t *n)
     
     for (index = 0; index < ETHER_ADDR_LEN; index++) {
         val = strtol(p, &ep, 16);
-        if (ep == p || val < 0 || val > 0xff || (index < ETHER_ADDR_LEN - 1 && *ep != ';')) {
+        if (ep == p || val < 0 || val > 0xff || (index < ETHER_ADDR_LEN - 1 && *ep != ':')) {
             break;
         }
         n[index] = (uint8_t)val;

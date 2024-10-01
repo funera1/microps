@@ -168,7 +168,7 @@ ether_tap_isr(unsigned int irq, void *id)
             /* No frames to input immediately. */
             break;
         }
-        ether_input_hleper(dev, ether_tap_read);
+        ether_input_helper(dev, ether_tap_read);
     }
     return 0;
 }
@@ -182,7 +182,7 @@ static struct net_device_ops ether_tap_ops = {
 struct net_device *
 ether_tap_init(const char *name, const char *addr)
 {
-    struct net_deivce *dev;
+    struct net_device *dev;
     struct ether_tap *tap;
 
     dev = net_device_alloc();
@@ -206,11 +206,11 @@ ether_tap_init(const char *name, const char *addr)
         return NULL;
     }
 
-    strncpy(tap->name, sizeof(tap->name)-1);
+    strncpy(tap->name, name, sizeof(tap->name)-1);
     tap->fd = -1;
     tap->irq = ETHER_TAP_IRQ;
     dev->priv = tap;
-    if (net_device_regiter(dev) == -1) {
+    if (net_device_register(dev) == -1) {
         errorf("net_device_register() failure");
         memory_free(tap);
         return NULL;
