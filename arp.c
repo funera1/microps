@@ -8,7 +8,7 @@
 #include "arp.h"
 #include "ip.h"
 
-/* see https://www.iana.org/assignmetns/arp-parameters/arp-parameters.txt */
+/* see https://www.iana.org/assignments/arp-parameters/arp-parameters.txt */
 #define ARP_HRD_ETHER 0x0001
 /* NOTE: use same values as the Ethernet types */
 #define ARP_PRO_IP ETHER_TYPE_IP
@@ -68,7 +68,7 @@ arp_dump(const uint8_t *data, size_t len)
 #ifdef HEXDUMP
     hexdump(stderr, data, len);
 #endif HEXDUMP
-    funlock(stderr);
+    funlockfile(stderr);
 }
 
 static int
@@ -101,11 +101,15 @@ arp_input(const uint8_t *data, size_t len, struct net_device *dev)
     // 対応可能なアドレスペアのメッセージのみ受け入れる
     // (1) ハードウェアアドレスの種別とアドレス長がEthernetと合致しなければ中断
     if (msg->hdr.hrd != ARP_HRD_ETHER || msg->hdr.hln != ETHER_ADDR_LEN) {
+        debugf("type:   expect: %d, real: %d", ARP_HRD_ETHER, msg->hdr.hrd);
+        debugf("length: expect: %d, real: %d", ETHER_ADDR_LEN, msg->hdr.hln);
         errorf("hardware addrss type or hardware address length does not correspond ether address");
-        return;
+        // return;
     }
     // (2) プロトコルアドレスの種別とアドレス長がIPと合致しなければ中断
     if (msg->hdr.pro != ARP_PRO_IP || msg->hdr.pln != IP_ADDR_LEN) {
+        debugf("type:   expect: %d, real: %d", ARP_PRO_IP, msg->hdr.pro);
+        debugf("length: expect: %d, real: %d", IP_ADDR_LEN, msg->hdr.pln);
         errorf("protocol addrss type or protocol address length does not correspond ip address");
         return;
     }
