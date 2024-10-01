@@ -74,16 +74,63 @@ arp_dump(const uint8_t *data, size_t len)
 static int
 arp_reply(struct net_iface *iface, const uint8_t *tha, ip_addr_t tpa, const uint8_t *dst)
 {
+    struct arp_ether_ip reply;
+    memcpy(&reply.spa, ((struct ip_iface *)iface)->unicast, sizeof(reply.spa));
+    memcpy(&reply.sha, iface->dev->addr, sizeof(reply.sha));
+    memcpy(&reply.tpa, tpa, sizeof(reply.tpa));
+    memcpy(&reply.tha, tha, sizeof(reply.tha));
 
+    debugf("dev=%s, len=%zu", iface->dev->name, sizeof(reply));
+    arp_dump((uint8_t *)&reply, sizeof(reply));
+    return net_device_output(iface->dev, ETHER_TYPE_ARP, (uint8_t *)&reply, sizeof(reply), dst);
 }
 
 static void
 arp_input(const uint8_t *data, size_t len, struct net_device *dev)
 {
+    struct arp_ether_ip *msg;
+    ip_addr_t spa, tpa;
+    struct net_iface *iface;
+
+    if (len < sizeof(*msg)) {
+        errorf("too short");
+        return;
+    }
+
+    msg = (struct arp_ether_ip *)data;
+    // 対応可能なアドレスペアのメッセージのみ受け入れる
+    // (1) ハードウェアアドレスの種別とアドレス長がEthernetと合致しなければ中断
+    if (msg->hdr.hrd != ARP_HRD_ETHER || msg->hdr.hln != ETHER_ADDR_LEN) {
+        errorf("hardware addrss type or hardware address length does not correspond ether address");
+        return;
+    }
+    // (2) プロトコルアドレスの種別とアドレス長がIPと合致しなければ中断
+    if (msg->hdr.pro != ARP_PRO_IP || msg->hdr.pln != IP_ADDR_LEN) {
+        errorf("protocol addrss type or protocol address length does not correspond ip address");
+        return;
+    }
+
+    debugf("dev=%s, len=%zu", dev->name, len);
+    arp_dump(data, len);
+    memcpy(&spa, msg->spa, sizeof(spa));
+    memcpy(&tpa, msg->tpa, sizeof(tpa));
+    iface = net_device_get_iface(dev, NET_IFACE_FAMILY_IP);
+    if (iface && ((struct ip_iface *)iface)->unicast == tpa) {
+        // ARP要求への応答
+        if (msg->hdr.op == ARP_OP_REQUEST) {
+            // TODO: dstに対応するものを確認する
+            arp_reply(iface, msg->tha, msg->tpa, spa);
+        }
+    }
 
 }
 
 int arp_init(void)
 {
-
+    if (net_protocol_register(NET_PROTOCOL_TYPE_ARP, arp_input) == -1) {
+        errorf("net_protocol_register() failure");
+        return -1;
+    }
+    
+    return 0;
 }

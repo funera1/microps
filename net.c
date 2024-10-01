@@ -7,6 +7,7 @@
 
 #include "util.h"
 #include "net.h"
+#include "arp.h"
 
 struct net_protocol {
     struct net_protocol *next;
@@ -287,6 +288,11 @@ net_init(void)
 {
     if (intr_init() == -1) {
         errorf("intr_init() failure");
+        return -1;
+    }
+
+    if (arp_init() == -1) {
+        errorf("arp_init() failure");
         return -1;
     }
     
